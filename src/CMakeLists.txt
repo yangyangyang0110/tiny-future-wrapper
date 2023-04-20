@@ -5,7 +5,7 @@
 file(GLOB SOURCES
 	${SRC_ROOT}/main.cpp
 	${SRC_ROOT}/helper/*_test.cpp
-)
+	)
 
 #file(GLOB TEST_FILES ${SRC_ROOT}/../test/*_test.cpp)
 set(TEST_FILES "")
@@ -24,13 +24,12 @@ message(STATUS "Sources: ${SOURCES}")
 message(STATUS "TEST_FILES: ${TEST_FILES}")
 
 
-
 ##############################################
 ################ Build Target ################
 ##############################################
 add_executable(main main.cpp)
+target_include_directories(main PUBLIC ${SRC_ROOT})
 target_link_libraries(main PRIVATE benchmark::benchmark pthread Boost::boost)
-
 
 
 ############################################
@@ -62,9 +61,6 @@ if (ENABLE_TEST)
 		gtest_discover_tests(${target})
 	endforeach ()
 endif ()
-
-
-
 
 
 # add_executable(bug bug.cpp)
