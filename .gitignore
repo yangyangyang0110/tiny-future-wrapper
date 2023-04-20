@@ -1,0 +1,14 @@
+.*
+/*
+
+!src
+
+!cmake
+!CMakeLists.txt
+
+!README.md
+
+!.clang-format
+!.gitignore
+
+
