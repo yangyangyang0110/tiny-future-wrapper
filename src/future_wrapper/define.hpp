@@ -15,12 +15,11 @@
 #include <string>
 
 using String = std::string;
-using Value = String;
 
 class SharedStateBase {};
 
-// using Callback = std::function<void(SharedStateBase&)>;
-using Callback = std::function<void(Value&&)>;
+using Callback = std::function<void(SharedStateBase&)>;
+// using Callback = std::function<void(Value&&)>;
 
 struct MoveOnlyAble {
     explicit MoveOnlyAble() noexcept = default;

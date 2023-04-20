@@ -13,6 +13,8 @@
 
 #include "future_wrapper/define.hpp"
 #include <atomic>
+#include <boost/type_traits.hpp>
+
 #include <cassert>
 #include <chrono>
 #include <condition_variable>
@@ -23,32 +25,43 @@
 #include <thread>
 #include <vector>
 
+using Func = std::function<void()>;
+
 // 通过Executor(Future-Runtime)将任务(回调函数)异步运行
 class Executor : public MoveOnlyAble {
 public:
     virtual ~Executor() noexcept = default;
 
 public:
-    virtual void submit(Callback&& callback, Value&& value) = 0;
+    virtual void submit(Func&& func) = 0;
 };
 
 class ThreadExecutor : public Executor {
+
     using Self = ThreadExecutor;
     using Mutex = std::mutex;
-    using task_type = std::function<void()>;
+
+    using WLock = std::unique_lock<Mutex>;
+    using WGLock = std::lock_guard<Mutex>;
 
     std::vector<std::thread> threads_;
-    std::queue<task_type> task_queue_;
+    std::queue<Func> task_queue_;
     mutable Mutex mutex_;
     mutable std::condition_variable cv_;
     std::atomic<bool> should_terminate_;
     std::atomic<int32_t> action_thread_;
 
 public:
-    void submit(Callback&& callback, Value&& value) final {
-        std::lock_guard<Mutex> lock(mutex_);
-        task_queue_.emplace([taskPtr = std::make_shared<Callback>(std::move(callback)),
-                             value = std::move(value)]() mutable { (*taskPtr)(std::move(value)); });
+    // void submit(Callback&& callback, Value&& value) {
+    //     std::lock_guard<Mutex> lock(mutex_);
+    //     task_queue_.emplace([taskPtr = std::make_shared<Callback>(std::move(callback)),
+    //                          value = std::move(value)]() mutable { (*taskPtr)(std::move(value)); });
+    //     cv_.notify_one();
+    // }
+
+    void submit(Func&& func) final {
+        WGLock lock(mutex_);
+        task_queue_.emplace(std::forward<Func>(func));
         cv_.notify_one();
     }
 
@@ -66,7 +79,7 @@ public:
 
     void run(std::string const& thread_name) {
         while (true) {
-            task_type task;
+            Func task;
             {
                 std::unique_lock<Mutex> lock(mutex_);
                 cv_.wait(

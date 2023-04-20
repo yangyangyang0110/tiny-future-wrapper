@@ -30,9 +30,19 @@ void Future<T>::via(Executor* executor) {
 }
 
 template <typename T>
-void Future<T>::thenValue(Callback&& callback) noexcept {
+template <typename Fn>
+void Future<T>::thenValue(Fn&& func) noexcept {
+    auto funcWrapper = [f = static_cast<Fn&&>(func)](T&& value) mutable {
+        // TODO: invoke-wrapper.
+        f(std::move(value));
+    };
+    Callback callback = [funcWrapper = std::move(funcWrapper)](SharedStateBase& base) mutable {
+        auto& sharedState = static_cast<SharedState<T>&>(base);
+        funcWrapper(std::move(sharedState.getValue()));
+    };
     getSharedState().setCallback(std::move(callback));
 }
+
 template <typename T>
 void Future<T>::get() && {
     auto&& sharedState = getSharedState();

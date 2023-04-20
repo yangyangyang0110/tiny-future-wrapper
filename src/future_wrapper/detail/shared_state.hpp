@@ -34,14 +34,16 @@ public:
 
     void setExecutor(Executor* executor) { pExecutor_ = executor; }
 
-    Value& getValue() { return value_; }
+    T& getValue() { return value_; }
 
     void call() {
-        if (pExecutor_ != nullptr) {
-            pExecutor_->submit(std::move(callback_), std::move(value_));
+        if (pExecutor_) {
+            // 如何通过后台调用呢？
+            pExecutor_->submit([this] { callback_(*this); });
         }
         else {
-            callback_(std::move(value_));
+            callback_(*this);
+            // callback_(std::move(value_));
         }
     }
 
@@ -49,6 +51,9 @@ public:
     SharedPtr static Create() noexcept { return std::make_shared<Self>(); }
 
 private:
+    // union {
+    //     Callback callback_; // 配合shared_ptr构造会失败.
+    // };
     Callback callback_;
     Executor* pExecutor_{nullptr};
 

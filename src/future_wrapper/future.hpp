@@ -36,7 +36,8 @@ public:
 public:
     void via(Executor* executor);
 
-    void thenValue(Callback&& callback) noexcept;
+    template <typename Fn>
+    void thenValue(Fn&& func) noexcept;
 
     void get() &&;
 
